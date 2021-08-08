@@ -1,0 +1,47 @@
+version: "3.5"
+
+#Stack de docker-compose con el que puedes usar PgAdmin en conjunto con un contenedor de Postgres. En teoria el contenedor de PgAdmin tambien deberia permitirte administrar cualquier base de Postgres que tengas en un servidor dentro de la misma red. Pero hasta los momentos no lo he probado.
+
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      # coloca el usuario con el que te conectaras a la base de datos de Postgres
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      # coloca la clave para acceder al usuario de la base de datos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      # correo para administrar el PgAdmin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-your@mail.com}
+      # clave de acceso para el PgAdmin
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-password}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin:/root/.pgadmin
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - postgres
+    restart: unless-stopped # siempre es recomendable correr los servicios de docker bajo "unless-stopped", de forma que el mismo siempre se reinicie de manera automatica, a menos que el admin sea quien lo detenga (ya sea por mantenimiento o debug)
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
